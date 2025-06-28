@@ -7,7 +7,6 @@ import java.awt.event.*;
 import java.io.*;
 import java.sql.*;
 import java.time.LocalDate;
-import java.util.Vector;
 
 public class visitationUI extends JFrame {
     private JTable visitTable;
@@ -23,6 +22,7 @@ public class visitationUI extends JFrame {
 
         add(createSidebar(), BorderLayout.WEST);
         add(createMainPanel(), BorderLayout.CENTER);
+        loadVisitsFromDatabase();
     }
 
     private JPanel createSidebar() {
@@ -132,7 +132,7 @@ public class visitationUI extends JFrame {
             }
         });
 
-        btnAdd.addActionListener(e -> JOptionPane.showMessageDialog(this, "Add visit logic here"));
+        btnAdd.addActionListener(e -> showAddDialog());
         btnExport.addActionListener(e -> exportVisitsToFile());
 
         mainPanel.add(topPanel, BorderLayout.NORTH);
@@ -140,6 +140,64 @@ public class visitationUI extends JFrame {
         mainPanel.add(scrollPane, BorderLayout.SOUTH);
 
         return mainPanel;
+    }
+
+    private void showAddDialog() {
+        JTextField visitorField = new JTextField();
+        JTextField prisonerField = new JTextField();
+        JTextField relationField = new JTextField();
+        JTextField dateField = new JTextField(LocalDate.now().toString());
+        JTextField inField = new JTextField();
+        JTextField outField = new JTextField();
+        JCheckBox approval = new JCheckBox("Approved");
+
+        JPanel panel = new JPanel(new GridLayout(0, 1));
+        panel.add(new JLabel("Visitor Name:")); panel.add(visitorField);
+        panel.add(new JLabel("Prisoner Name:")); panel.add(prisonerField);
+        panel.add(new JLabel("Relation:")); panel.add(relationField);
+        panel.add(new JLabel("Visit Date:")); panel.add(dateField);
+        panel.add(new JLabel("Time In:")); panel.add(inField);
+        panel.add(new JLabel("Time Out:")); panel.add(outField);
+        panel.add(approval);
+
+        int result = JOptionPane.showConfirmDialog(null, panel, "Add Visit", JOptionPane.OK_CANCEL_OPTION);
+        if (result == JOptionPane.OK_OPTION) {
+            try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/prison_db", "root", "")) {
+                PreparedStatement ps = conn.prepareStatement("INSERT INTO visitations (visitor_name, prisoner_name, relation, visit_date, time_in, time_out, security_approval) VALUES (?, ?, ?, ?, ?, ?, ?)");
+                ps.setString(1, visitorField.getText());
+                ps.setString(2, prisonerField.getText());
+                ps.setString(3, relationField.getText());
+                ps.setString(4, dateField.getText());
+                ps.setString(5, inField.getText());
+                ps.setString(6, outField.getText());
+                ps.setBoolean(7, approval.isSelected());
+                ps.executeUpdate();
+                loadVisitsFromDatabase();
+            } catch (SQLException e) {
+                JOptionPane.showMessageDialog(this, "Error adding visit: " + e.getMessage());
+            }
+        }
+    }
+
+    private void loadVisitsFromDatabase() {
+        tableModel.setRowCount(0);
+        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/prison_db", "root", "")) {
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT visitor_name, prisoner_name, relation, visit_date, time_in, time_out, security_approval FROM visitations");
+            while (rs.next()) {
+                tableModel.addRow(new Object[]{
+                    rs.getString("visitor_name"),
+                    rs.getString("prisoner_name"),
+                    rs.getString("relation"),
+                    rs.getString("visit_date"),
+                    rs.getString("time_in"),
+                    rs.getString("time_out"),
+                    rs.getBoolean("security_approval") ? "Yes" : "No"
+                });
+            }
+        } catch (SQLException e) {
+            JOptionPane.showMessageDialog(this, "Error loading visits: " + e.getMessage());
+        }
     }
 
     private void exportVisitsToFile() {
