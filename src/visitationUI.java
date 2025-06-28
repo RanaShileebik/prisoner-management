@@ -1,223 +1,145 @@
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
 import java.awt.*;
+import java.awt.event.*;
 import java.io.*;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.Vector;
 
 public class visitationUI extends JFrame {
-
-    private JComboBox<String> prisonerCombo;
-    private JTextField visitorField, relationField, dateField, timeInField, timeOutField;
-    private JCheckBox approvalCheck;
     private JTable visitTable;
     private DefaultTableModel tableModel;
-    private JButton btnAdd, btnExport;
+    private JTextField searchField;
 
     public visitationUI() {
-        setTitle("Visitation Management");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setTitle("Visitation Management System");
+        setSize(1100, 600);
         setLocationRelativeTo(null);
-        setSize(950, 600);
+        setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        initMenuBar();
-        initComponents();
-        loadPrisoners();
-        loadVisitations();
-
-        setVisible(true);
+        add(createSidebar(), BorderLayout.WEST);
+        add(createMainPanel(), BorderLayout.CENTER);
     }
 
-    private void initMenuBar() {
-        JMenuBar menuBar = new JMenuBar();
+    private JPanel createSidebar() {
+        JPanel sidebar = new JPanel();
+        sidebar.setPreferredSize(new Dimension(180, getHeight()));
+        sidebar.setBackground(new Color(245, 245, 245));
+        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
 
-        JMenu menuPrisoner = new JMenu("Prisoner Management");
-        JMenu menuRelease = new JMenu("Release Tracking");
-        JMenu menuVisitation = new JMenu("Visitation Management");
+        JLabel logo = new JLabel("\uD83D\uDEE1 PMS");
+        logo.setFont(new Font("SansSerif", Font.BOLD, 18));
+        logo.setBorder(new EmptyBorder(20, 15, 20, 0));
 
-        menuPrisoner.addMenuListener(new javax.swing.event.MenuListener() {
-            public void menuSelected(javax.swing.event.MenuEvent e) {
-                dispose();
-                new PrisonerGUI().setVisible(true);
-            }
-            public void menuDeselected(javax.swing.event.MenuEvent e) {}
-            public void menuCanceled(javax.swing.event.MenuEvent e) {}
+        JButton tab1 = new JButton("Prisoner Management");
+        JButton tab2 = new JButton("Sentence Tracker");
+        JButton tab3 = new JButton("Visitation Management");
+
+        tab1.addActionListener(e -> {
+            dispose();
+            new PrisonerGUI().setVisible(true);
+        });
+        tab2.addActionListener(e -> {
+            dispose();
+            new TimeTrackingUI().setVisible(true);
         });
 
-        menuRelease.addMenuListener(new javax.swing.event.MenuListener() {
-            public void menuSelected(javax.swing.event.MenuEvent e) {
-                dispose();
-                new TimeTrackingUI().setVisible(true);
-            }
-            public void menuDeselected(javax.swing.event.MenuEvent e) {}
-            public void menuCanceled(javax.swing.event.MenuEvent e) {}
-        });
+        for (JButton b : new JButton[]{tab1, tab2, tab3}) {
+            b.setFocusPainted(false);
+            b.setContentAreaFilled(false);
+            b.setBorderPainted(false);
+            b.setHorizontalAlignment(SwingConstants.LEFT);
+            b.setBorder(new EmptyBorder(10, 20, 10, 10));
+        }
 
-        menuBar.add(menuPrisoner);
-        menuBar.add(menuRelease);
-        menuBar.add(menuVisitation);
-        setJMenuBar(menuBar);
+        sidebar.add(logo);
+        sidebar.add(tab1);
+        sidebar.add(tab2);
+        sidebar.add(tab3);
+        return sidebar;
     }
 
-    private void initComponents() {
-        JPanel panelTopWrapper = new JPanel();
-        panelTopWrapper.setLayout(new BorderLayout());
+    private JPanel createMainPanel() {
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
 
-        JLabel title = new JLabel("Visitation Management", SwingConstants.CENTER);
-        title.setFont(new Font("Arial", Font.BOLD, 20));
-        title.setBorder(BorderFactory.createEmptyBorder(10, 0, 10, 0));
-        panelTopWrapper.add(title, BorderLayout.NORTH);
+        JPanel topPanel = new JPanel(new BorderLayout());
+        topPanel.setOpaque(false);
 
-        JPanel panelTop = new JPanel(new GridBagLayout());
-        panelTop.setBackground(new Color(245, 245, 245));
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.insets = new Insets(8, 10, 8, 10);
-        gbc.fill = GridBagConstraints.HORIZONTAL;
+        JLabel title = new JLabel("Visitation Management");
+        title.setFont(new Font("SansSerif", Font.BOLD, 22));
+        JLabel subtitle = new JLabel("Manage and track all visitations.");
+        subtitle.setForeground(Color.GRAY);
 
-        Font uiFont = new Font("Segoe UI", Font.PLAIN, 14);
+        JPanel titlePanel = new JPanel(new GridLayout(2, 1));
+        titlePanel.setOpaque(false);
+        titlePanel.add(title);
+        titlePanel.add(subtitle);
 
-        gbc.gridx = 0; gbc.gridy = 0;
-        panelTop.add(new JLabel("Visitor Name:"), gbc);
-        gbc.gridx = 1; gbc.gridwidth = 2;
-        visitorField = new JTextField(15);
-        visitorField.setFont(uiFont);
-        panelTop.add(visitorField, gbc);
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT));
+        JButton btnAdd = new JButton("+ Add Visit");
+        JButton btnExport = new JButton("Export");
 
-        gbc.gridx = 0; gbc.gridy = 1; gbc.gridwidth = 1;
-        panelTop.add(new JLabel("Select Prisoner:"), gbc);
-        gbc.gridx = 1; gbc.gridwidth = 2;
-        prisonerCombo = new JComboBox<>();
-        prisonerCombo.setFont(uiFont);
-        panelTop.add(prisonerCombo, gbc);
+        btnAdd.setBackground(new Color(41, 98, 255));
+        btnAdd.setForeground(Color.WHITE);
+        btnExport.setBackground(Color.LIGHT_GRAY);
+        btnExport.setForeground(Color.BLACK);
 
-        gbc.gridx = 0; gbc.gridy = 2; gbc.gridwidth = 1;
-        panelTop.add(new JLabel("Relationship to Prisoner:"), gbc);
-        gbc.gridx = 1; gbc.gridwidth = 2;
-        relationField = new JTextField(15);
-        relationField.setFont(uiFont);
-        panelTop.add(relationField, gbc);
+        buttonPanel.setOpaque(false);
+        buttonPanel.add(btnExport);
+        buttonPanel.add(btnAdd);
 
-        gbc.gridx = 4; gbc.gridy = 0; gbc.gridwidth = 1;
-        panelTop.add(new JLabel("Visit Date (yyyy-mm-dd):"), gbc);
-        gbc.gridx = 5;
-        dateField = new JTextField(10);
-        dateField.setFont(uiFont);
-        dateField.setText(LocalDate.now().toString());
-        panelTop.add(dateField, gbc);
-        gbc.gridx = 4; gbc.gridy = 1;
-        panelTop.add(new JLabel("Time In (hh:mm):"), gbc);
-        gbc.gridx = 5;
-        timeInField = new JTextField(10);
-        timeInField.setFont(uiFont);
-        panelTop.add(timeInField, gbc);
+        topPanel.add(titlePanel, BorderLayout.WEST);
+        topPanel.add(buttonPanel, BorderLayout.EAST);
 
-        gbc.gridx = 4; gbc.gridy = 2;
-        panelTop.add(new JLabel("Time Out (hh:mm):"), gbc);
-        gbc.gridx = 5;
-        timeOutField = new JTextField(10);
-        timeOutField.setFont(uiFont);
-        panelTop.add(timeOutField, gbc);
+        JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
+        searchPanel.setOpaque(false);
+        searchField = new JTextField("Search visitor or prisoner", 25);
+        searchField.setForeground(Color.GRAY);
+        searchField.setToolTipText("Type to filter visits");
+        searchField.addFocusListener(new FocusAdapter() {
+            public void focusGained(FocusEvent e) {
+                if (searchField.getText().equals("Search visitor or prisoner")) {
+                    searchField.setText("");
+                    searchField.setForeground(Color.BLACK);
+                }
+            }
+            public void focusLost(FocusEvent e) {
+                if (searchField.getText().isEmpty()) {
+                    searchField.setForeground(Color.GRAY);
+                    searchField.setText("Search visitor or prisoner");
+                }
+            }
+        });
 
-        gbc.gridx = 0; gbc.gridy = 3;
-        panelTop.add(new JLabel("Security Approval:"), gbc);
-        gbc.gridx = 1;
-        approvalCheck = new JCheckBox("Approved");
-        approvalCheck.setFont(uiFont);
-        panelTop.add(approvalCheck, gbc);
+        searchPanel.add(searchField);
 
-        gbc.gridx = 4;
-        btnAdd = new JButton("➕ Add Visit");
-        btnAdd.setBackground(new Color(144, 238, 144));
-        btnAdd.setFont(uiFont);
-        btnAdd.addActionListener(e -> saveVisitation());
-        panelTop.add(btnAdd, gbc);
-
-        gbc.gridx = 5;
-        btnExport = new JButton("📤 Export Visits");
-        btnExport.setBackground(new Color(173, 216, 230));
-        btnExport.setFont(uiFont);
-        btnExport.addActionListener(e -> exportVisitsToFile());
-        panelTop.add(btnExport, gbc);
-
-        panelTopWrapper.add(panelTop, BorderLayout.CENTER);
-        add(panelTopWrapper, BorderLayout.NORTH);
-
-        tableModel = new DefaultTableModel();
-        tableModel.setColumnIdentifiers(new String[]{"ID", "Prisoner", "Visitor", "Relation", "Visit Date", "Time In", "Time Out", "Approved"});
+        tableModel = new DefaultTableModel(new String[]{"Visitor", "Prisoner", "Relation", "Date", "Time In", "Time Out", "Approved"}, 0);
         visitTable = new JTable(tableModel);
-        visitTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        visitTable.setAutoResizeMode(JTable.AUTO_RESIZE_ALL_COLUMNS);
-        visitTable.setFillsViewportHeight(true);
+        visitTable.setRowHeight(30);
         JScrollPane scrollPane = new JScrollPane(visitTable);
-        add(scrollPane, BorderLayout.CENTER);
-    }
 
-    private void loadPrisoners() {
-        try (Connection conn = DBConnection.getConnection()) {
-            Statement st = conn.createStatement();
-            ResultSet rs = st.executeQuery("SELECT id, name FROM prisoners");
-            while (rs.next()) {
-                prisonerCombo.addItem(rs.getInt("id") + " - " + rs.getString("name"));
+        TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<>(tableModel);
+        visitTable.setRowSorter(sorter);
+        searchField.addKeyListener(new KeyAdapter() {
+            public void keyReleased(KeyEvent e) {
+                String text = searchField.getText();
+                sorter.setRowFilter(RowFilter.regexFilter("(?i)" + text));
             }
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "⚠️ Error loading prisoners: " + ex.getMessage());
-        }
-    }
+        });
 
-    private void loadVisitations() {
-        tableModel.setRowCount(0);
-        try (Connection conn = DBConnection.getConnection()) {
-            String query = "SELECT v.id, p.name AS prisoner_name, v.visitor_name, v.relation, v.visit_date, v.time_in, v.time_out, v.security_approval " +
-                           "FROM visitations v JOIN prisoners p ON v.prisoner_id = p.id";
-            Statement st = conn.createStatement();
-            ResultSet rs = st.executeQuery(query);
-            while (rs.next()) {
-                Vector<Object> row = new Vector<>();
-                row.add(rs.getInt("id"));
-                row.add(rs.getString("prisoner_name"));
-                row.add(rs.getString("visitor_name"));
-                row.add(rs.getString("relation"));
-                row.add(rs.getString("visit_date"));
-                row.add(rs.getString("time_in"));
-                row.add(rs.getString("time_out"));
-                row.add(rs.getBoolean("security_approval") ? "Yes" : "No");
-                tableModel.addRow(row);
-            }
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "⚠️ Error loading visits: " + ex.getMessage());
-        }
-    }
+        btnAdd.addActionListener(e -> JOptionPane.showMessageDialog(this, "Add visit logic here"));
+        btnExport.addActionListener(e -> exportVisitsToFile());
 
-    private void saveVisitation() {
-        String visitorName = visitorField.getText();
-        String relation = relationField.getText();
-        String selected = (String) prisonerCombo.getSelectedItem();
-        if (selected == null || selected.isEmpty()) return;
-        int prisonerId = Integer.parseInt(selected.split(" - ")[0]);
-        String visitDate = dateField.getText();
-        String timeIn = timeInField.getText();
-        String timeOut = timeOutField.getText();
-        boolean approved = approvalCheck.isSelected();
+        mainPanel.add(topPanel, BorderLayout.NORTH);
+        mainPanel.add(searchPanel, BorderLayout.CENTER);
+        mainPanel.add(scrollPane, BorderLayout.SOUTH);
 
-        try (Connection conn = DBConnection.getConnection()) {
-            String sql = "INSERT INTO visitations (prisoner_id, visitor_name, relation, visit_date, time_in, time_out, security_approval) VALUES (?, ?, ?, ?, ?, ?, ?)";
-            PreparedStatement ps = conn.prepareStatement(sql);
-            ps.setInt(1, prisonerId);
-            ps.setString(2, visitorName);
-            ps.setString(3, relation);
-            ps.setString(4, visitDate);
-            ps.setString(5, timeIn);
-            ps.setString(6, timeOut);
-            ps.setBoolean(7, approved);
-            ps.executeUpdate();
-
-            JOptionPane.showMessageDialog(this, "✅ Visit added successfully");
-            loadVisitations();
-        } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(this, "❌ Error saving visit: " + ex.getMessage());
-        }
+        return mainPanel;
     }
 
     private void exportVisitsToFile() {
@@ -237,6 +159,6 @@ public class visitationUI extends JFrame {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(() -> new visitationUI());
+        SwingUtilities.invokeLater(() -> new visitationUI().setVisible(true));
     }
 }
