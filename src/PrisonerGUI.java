@@ -78,6 +78,8 @@ public class PrisonerGUI extends JFrame {
         panel.add(new JLabel(label));
         return panel;
     }
+    
+    
 
     private JPanel createMainPanel() {
         JPanel mainPanel = new JPanel(new BorderLayout());
