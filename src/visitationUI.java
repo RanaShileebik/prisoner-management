@@ -162,8 +162,8 @@ public class visitationUI extends JFrame {
 
         int result = JOptionPane.showConfirmDialog(null, panel, "Add Visit", JOptionPane.OK_CANCEL_OPTION);
         if (result == JOptionPane.OK_OPTION) {
-            try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/prison_db", "root", "")) {
-                PreparedStatement ps = conn.prepareStatement("INSERT INTO visitations (visitor_name, prisoner_name, relation, visit_date, time_in, time_out, security_approval) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3307/prison_db", "root", "")) {
+                PreparedStatement ps = conn.prepareStatement("INSERT INTO visitations (visitor_name, prisoner_id, relation, visit_date, time_in, time_out, security_approval) VALUES (?, ?, ?, ?, ?, ?, ?)");
                 ps.setString(1, visitorField.getText());
                 ps.setString(2, prisonerField.getText());
                 ps.setString(3, relationField.getText());
@@ -181,13 +181,13 @@ public class visitationUI extends JFrame {
 
     private void loadVisitsFromDatabase() {
         tableModel.setRowCount(0);
-        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3306/prison_db", "root", "")) {
+        try (Connection conn = DriverManager.getConnection("jdbc:mysql://localhost:3307/prison_db", "root", "")) {
             Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery("SELECT visitor_name, prisoner_name, relation, visit_date, time_in, time_out, security_approval FROM visitations");
+            ResultSet rs = stmt.executeQuery("SELECT visitor_name, prisoner_id, relation, visit_date, time_in, time_out, security_approval FROM visitations");
             while (rs.next()) {
                 tableModel.addRow(new Object[]{
                     rs.getString("visitor_name"),
-                    rs.getString("prisoner_name"),
+                    rs.getString("prisoner_id"),
                     rs.getString("relation"),
                     rs.getString("visit_date"),
                     rs.getString("time_in"),
