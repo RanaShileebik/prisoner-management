@@ -1,3 +1,4 @@
+package prison_sys;
 import javax.swing.*;
 import java.awt.*;
 import java.time.LocalDate;
@@ -108,3 +109,4 @@ public class PrisonerCard extends JPanel {
         }
     }
 }
+
