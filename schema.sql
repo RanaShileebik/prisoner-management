@@ -1,6 +1,0 @@
-CREATE TABLE IF NOT EXISTS prisoners (
-    id INT PRIMARY KEY,
-    name VARCHAR(100) NOT NULL,
-    age INT NOT NULL,
-    crime VARCHAR(255) NOT NULL
-);
