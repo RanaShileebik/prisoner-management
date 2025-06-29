@@ -1,15 +1,19 @@
 import javax.swing.*;
-
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
 import java.sql.*;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
-
+import prison_sys.PrisonerCard;
 
 public class TimeTrackingUI extends JFrame {
     private final JPanel mainPanel;
     private final List<PrisonerCard> prisonerCards = new ArrayList<>();
+
+    private static final String URL = "jdbc:mysql://localhost:3307/prison_db";
+    private static final String USER = "root";
+    private static final String PASS = "";
 
     public TimeTrackingUI() {
         setTitle("Time Tracking Interface");
@@ -18,34 +22,7 @@ public class TimeTrackingUI extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        JMenuBar menuBar = new JMenuBar();
-        JMenu menuPrisoner = new JMenu("Prisoner Management");
-        JMenu menuRelease  = new JMenu("Release Tracking");
-        JMenu menuVisit    = new JMenu("Visitation Management");
-
-        JMenuItem openPrisoner = new JMenuItem("Open");
-        JMenuItem openRelease  = new JMenuItem("Open");
-        JMenuItem openVisit    = new JMenuItem("Open");
-
-        openPrisoner.addActionListener(e -> {
-        dispose();
-        new PrisonerGUI().setVisible(true);
-});
-
-        openRelease.addActionListener (e -> JOptionPane.showMessageDialog(this, "Release Tracking Window"));
-        openVisit.addActionListener(e -> {
-    dispose();
-    new visitationUI().setVisible(true);
-});
-
-        menuPrisoner.add(openPrisoner);
-        menuRelease .add(openRelease);
-        menuVisit   .add(openVisit);
-
-        menuBar.add(menuPrisoner);
-        menuBar.add(menuRelease);
-        menuBar.add(menuVisit);
-        setJMenuBar(menuBar);
+        add(createSidebar(), BorderLayout.WEST);
 
         JPanel searchPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         JTextField searchField = new JTextField("Search...", 20);
@@ -86,21 +63,56 @@ public class TimeTrackingUI extends JFrame {
             }
         });
 
-       
         addWindowListener(new java.awt.event.WindowAdapter() {
-            @Override public void windowClosing(java.awt.event.WindowEvent e) {
+            @Override
+            public void windowClosing(java.awt.event.WindowEvent e) {
                 prisonerCards.forEach(PrisonerCard::stopMonitor);
             }
         });
     }
 
-    
+    private JPanel createSidebar() {
+        JPanel sidebar = new JPanel();
+        sidebar.setPreferredSize(new Dimension(180, getHeight()));
+        sidebar.setBackground(new Color(245, 245, 245));
+        sidebar.setLayout(new BoxLayout(sidebar, BoxLayout.Y_AXIS));
 
-    private static final String URL  = "jdbc:mysql://localhost:3307/prison_db";
-    private static final String USER = "root";
-    private static final String PASS = "";
+        JLabel logo = new JLabel("\uD83D\uDEE1 PMS");
+        logo.setFont(new Font("SansSerif", Font.BOLD, 18));
+        logo.setBorder(new EmptyBorder(20, 15, 20, 0));
 
-    /* تحميل جميع السج*/
+        JButton tab1 = new JButton("Prisoner Management");
+        JButton tab2 = new JButton("Sentence Tracker");
+        JButton tab3 = new JButton("Visitation Management");
+
+        tab1.addActionListener(e -> {
+            dispose();
+            new PrisonerGUI().setVisible(true);
+        });
+        tab2.addActionListener(e -> {
+            dispose();
+            new TimeTrackingUI().setVisible(true);
+        });
+        tab3.addActionListener(e -> {
+            dispose();
+            new visitationUI().setVisible(true);
+        });
+
+        for (JButton b : new JButton[]{tab1, tab2, tab3}) {
+            b.setFocusPainted(false);
+            b.setContentAreaFilled(false);
+            b.setBorderPainted(false);
+            b.setHorizontalAlignment(SwingConstants.LEFT);
+            b.setBorder(new EmptyBorder(10, 20, 10, 10));
+        }
+
+        sidebar.add(logo);
+        sidebar.add(tab1);
+        sidebar.add(tab2);
+        sidebar.add(tab3);
+        return sidebar;
+    }
+
     private void loadAllPrisoners() {
         mainPanel.removeAll();
         prisonerCards.clear();
@@ -108,7 +120,7 @@ public class TimeTrackingUI extends JFrame {
         String sql = "SELECT * FROM prisoners";
         try (Connection conn = DriverManager.getConnection(URL, USER, PASS);
              Statement stmt = conn.createStatement();
-             ResultSet rs   = stmt.executeQuery(sql)) {
+             ResultSet rs = stmt.executeQuery(sql)) {
 
             while (rs.next()) {
                 addCard(rs);
@@ -118,11 +130,10 @@ public class TimeTrackingUI extends JFrame {
             ex.printStackTrace();
         }
 
-mainPanel.revalidate();
+        mainPanel.revalidate();
         mainPanel.repaint();
     }
 
-    
     private void searchPrisoners(String keyword) {
         mainPanel.removeAll();
         prisonerCards.clear();
@@ -133,7 +144,11 @@ mainPanel.revalidate();
 
             ps.setString(1, "%" + keyword + "%");
             int idVal;
-            try { idVal = Integer.parseInt(keyword); } catch (NumberFormatException ex) { idVal = -1; }
+            try {
+                idVal = Integer.parseInt(keyword);
+            } catch (NumberFormatException ex) {
+                idVal = -1;
+            }
             ps.setInt(2, idVal);
 
             try (ResultSet rs = ps.executeQuery()) {
@@ -155,12 +170,11 @@ mainPanel.revalidate();
         mainPanel.repaint();
     }
 
-    
     private void addCard(ResultSet rs) throws SQLException {
-        int       id          = rs.getInt("id");
-        String    name        = rs.getString("name");
-        String    crime       = rs.getString("crime");
-        LocalDate entryDate   = LocalDate.parse(rs.getString("entry_date"));
+        int id = rs.getInt("id");
+        String name = rs.getString("name");
+        String crime = rs.getString("crime");
+        LocalDate entryDate = LocalDate.parse(rs.getString("entry_date"));
         LocalDate releaseDate = LocalDate.parse(rs.getString("release_date"));
 
         PrisonerCard card = new PrisonerCard(name, id, crime, entryDate, releaseDate);
@@ -168,7 +182,6 @@ mainPanel.revalidate();
         mainPanel.add(card);
     }
 
-    
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> new TimeTrackingUI().setVisible(true));
     }
