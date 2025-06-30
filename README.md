@@ -1,9 +1,9 @@
 # Prison Management System – University Project
 
-📘 **University:** University of Tripoli  
-🏛️ **Faculty:** Information Technology – Software Engineering Department  
-🧪 **Course:** Advanced Java Programming
-👨‍🏫 **Supervisor:** Dr. Mai Moftah Al-Ba'baa  
+ **University:** University of Tripoli  
+ **Faculty:** Information Technology – Software Engineering Department  
+ **Course:** Advanced Java Programming
+ **Supervisor:** Dr. Mai Moftah Al-Ba'baa  
 
 ## 📌 Project Idea
 
@@ -30,4 +30,5 @@ A simple Java desktop application that manages prisoner records, sentence durati
 - GitHub
 
 ## 🔗 Project Repository
+
 [Click here to view on GitHub](https://github.com/RanaShileebik/prisoner-management)
